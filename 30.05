@@ -1,0 +1,42 @@
+import pandas as pd
+from google.colab import files
+
+# Hochladen der Excel-Datei
+uploaded = files.upload()
+
+# Die Datei wurde als Dictionary hochgeladen, das den Dateinamen als Schlüssel enthält
+file_path = next(iter(uploaded))
+
+# Laden der Excel-Datei
+xls = pd.ExcelFile(file_path)
+
+# Laden des relevanten Blattes (hier das erste Blatt)
+df = xls.parse(xls.sheet_names[0])
+
+# Bereinigen der Daten: Extrahieren der Spalten B und S (Index 1 und 18)
+df_cleaned = df.iloc[:, [1, 18]].copy()
+df_cleaned.columns = ['Zimmernummer', 'Packages']
+
+# Sicherstellen, dass die Zimmernummern und Packages als String behandelt werden
+df_cleaned['Zimmernummer'] = df_cleaned['Zimmernummer'].astype(str)
+df_cleaned['Packages'] = df_cleaned['Packages'].astype(str)
+
+# Verschieben der Packages-Zeilen um 2 Zeilen nach oben
+df_cleaned['Packages'] = df_cleaned['Packages'].shift(-2)
+
+# Entfernen von Zeilen mit NaN-Werten in der Zimmernummer
+df_cleaned.dropna(subset=['Zimmernummer'], inplace=True)
+
+# Filtern der Zeilen, die sowohl 'cite' als auch 'citi' enthalten, ohne Zeilen zu entfernen
+filtered_data = df_cleaned[df_cleaned['Packages'].str.contains('cite', case=False, na=False) & df_cleaned['Packages'].str.contains('citi', case=False, na=False)]
+
+# Anzeigen der gefilterten Daten
+print("\nGefilterte Daten:")
+print(filtered_data)
+
+# Überprüfen, ob es Zimmer mit doppelter Citytax gibt
+if filtered_data.empty:
+    print("\nKeine Doppte Citytaxpackages Vorhanden!")
+else:
+    print("\nZimmernummern mit doppelter Citytax:")
+    print(filtered_data['Zimmernummer'].tolist())
